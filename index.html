@@ -270,7 +270,7 @@ function newQuestion(usedQuestions=new Set()){
 function correctAnswers(q){return String(q.a).split('|').map(s=>s.trim().toLocaleLowerCase('id-ID'))}
 function makeOptions(q){const vals=[q.a,q.w1,q.w2,q.w3].filter(v=>String(v??'').trim()!=='').map(v=>String(v).trim());const unique=[...new Set(vals)];while(unique.length<4){const n=String(randInt(1,99));if(!unique.includes(n)&&n!==String(q.a))unique.push(n)}return shuffle(unique).slice(0,4)}
 function initPlayers(){
- players=Array.from({length:selectedCount},(_,i)=>({id:i,color:COLORS[i],score:0,answer:'',answered:false,correct:false,options:[],locked:false}));
+ players=Array.from({length:selectedCount},(_,i)=>({id:i,color:COLORS[i],score:0,answer:'',answered:false,correct:false,options:[],locked:false,questionTimer:null,nextTimer:null,questionCount:0,finished:false}));
  $('players').style.setProperty('--count',selectedCount);$('players').dataset.count=String(selectedCount);
  $('players').innerHTML=players.map(p=>`<article class="player-panel" id="panelP${p.id}" style="--pc:${p.color.css};--soft:${p.color.soft}">
    <div class="player-head"><span class="player-name">🚗 PEMAIN ${p.id+1} · ${p.color.name}</span><span class="player-score" id="scoreP${p.id}">⭐ 0 / ${targetScore}</span></div>
@@ -301,39 +301,85 @@ function setupAnswerUI(p){
 function updateAnswerDisplay(p){const el=$('displayP'+p.id);if(el)el.textContent=p.answer||'Masukkan jawaban'}
 function startRound(){
  if(!gameRunning)return;
- sound('round');
- roundLocked=false;const usedQuestions=new Set();
- $('roundPill').textContent='RONDE '+roundNumber;$('targetPill').textContent='TARGET '+targetScore+' POIN';
- players.forEach(p=>{p.question=newQuestion(usedQuestions);p.answer='';p.answered=false;p.correct=false;p.locked=false;$('questionP'+p.id).textContent=p.question.q;$('subP'+p.id).textContent='Soal acak khusus pemain ini';$('feedbackP'+p.id).textContent='SIAP MENJAWAB';$('feedbackP'+p.id).style.color=p.color.dark;setupAnswerUI(p);updateAnswerDisplay(p)});
- if(raceScene)raceScene.updateCars(players,targetScore);
- // Setiap pemain mendapat soal acak sendiri; ronde berlanjut setelah semua pemain menjawab atau waktu habis.
- clearTimeout(questionTimer);questionTimer=setTimeout(()=>resolveRound(true),30000);
-}
-function submitPlayer(id,value){
- const p=players[id];if(!gameRunning||roundLocked||!p||p.answered)return;
- p.answer=String(value??'').trim();p.answered=true;p.correct=correctAnswers(p.question).includes(p.answer.toLocaleLowerCase('id-ID'));
- $('displayP'+id).textContent=p.answer||'—';
- $('feedbackP'+id).textContent=p.correct?'✓ BENAR!':'✕ BELUM TEPAT';$('feedbackP'+id).style.color=p.correct?'#128044':'#b42323';
- $('answersP'+id).querySelectorAll('button').forEach(b=>b.disabled=true);
- const input=$('textInputP'+id);if(input)input.disabled=true;
- if(players.every(x=>x.answered))resolveRound(false);
-}
-function resolveRound(timedOut){
- if(roundLocked||!gameRunning)return;roundLocked=true;clearTimeout(questionTimer);
+ roundLocked=false;
+ const usedQuestions=new Set();
+ $('roundPill').textContent='BALAPAN DIMULAI';$('targetPill').textContent='TARGET '+targetScore+' POIN';
  players.forEach(p=>{
-  if(!p.answered){p.answered=true;p.correct=false;$('feedbackP'+p.id).textContent=timedOut?'WAKTU HABIS':'BELUM MENJAWAB';$('feedbackP'+p.id).style.color='#9a5b08'}
-  if(p.correct)p.score++;
-  $('scoreP'+p.id).textContent=`⭐ ${p.score} / ${targetScore}`;
-  $('answersP'+p.id).querySelectorAll('button,input').forEach(b=>b.disabled=true);
+  if(p.nextTimer){clearTimeout(p.nextTimer);p.nextTimer=null}
+  p.finished=false;p.questionCount=0;
+  issuePlayerQuestion(p,usedQuestions);
  });
  if(raceScene)raceScene.updateCars(players,targetScore);
- const winners=players.filter(p=>p.score>=targetScore);
- if(winners.length){
-   gameRunning=false;const winner=winners.sort((a,b)=>b.score-a.score)[0];
-   setTimeout(()=>showWinner(winners),800);return;
+}
+function issuePlayerQuestion(p,usedQuestions=new Set()){
+ if(!gameRunning||!p||p.finished)return;
+ if(p.nextTimer){clearTimeout(p.nextTimer);p.nextTimer=null}
+ p.question=newQuestion(usedQuestions);p.answer='';p.answered=false;p.correct=false;p.locked=false;
+ p.questionCount=(p.questionCount||0)+1;
+ const qEl=$('questionP'+p.id), subEl=$('subP'+p.id), fb=$('feedbackP'+p.id);
+ if(qEl)qEl.textContent=p.question.q;
+ if(subEl)subEl.textContent='SOAL '+p.questionCount+' • JAWAB SECEPATNYA';
+ if(fb){fb.textContent='SIAP MENJAWAB';fb.style.color=p.color.dark}
+ setupAnswerUI(p);updateAnswerDisplay(p);
+ if(p.questionTimer)clearTimeout(p.questionTimer);
+ // Batas waktu per soal untuk tiap pemain, tidak menahan pemain lain.
+ p.questionTimer=setTimeout(()=>{
+  if(!gameRunning||p.answered||p.finished)return;
+  p.answered=true;p.correct=false;
+  if(fb){fb.textContent='WAKTU HABIS • SOAL BERGANTI';fb.style.color='#9a5b08'}
+  disablePlayerAnswers(p);
+  p.nextTimer=setTimeout(()=>issuePlayerQuestion(p),2000);
+ },30000);
+}
+function disablePlayerAnswers(p){
+ const area=$('answersP'+p.id);
+ if(area)area.querySelectorAll('button,input').forEach(el=>el.disabled=true);
+ const input=$('textInputP'+p.id);if(input)input.disabled=true;
+}
+function submitPlayer(id,value){
+ const p=players[id];if(!gameRunning||!p||p.answered||p.finished)return;
+ p.answer=String(value??'').trim();
+ if(!p.answer)return;
+ p.answered=true;
+ if(p.questionTimer){clearTimeout(p.questionTimer);p.questionTimer=null}
+ p.correct=correctAnswers(p.question).includes(p.answer.toLocaleLowerCase('id-ID'));
+ sound(p.correct?'correct':'wrong');
+ const display=$('displayP'+id),fb=$('feedbackP'+id);
+ if(display)display.textContent=p.answer||'—';
+ if(fb){
+  fb.textContent=p.correct?'✓ BENAR! +1 POIN':'✕ SALAH • COBA LAGI 2 DETIK';
+  fb.style.color=p.correct?'#128044':'#b42323';
  }
- roundNumber++;
- setTimeout(()=>{if(gameRunning)startRound()},900);
+ disablePlayerAnswers(p);
+ if(p.correct){
+  p.score++;
+  const scoreEl=$('scoreP'+p.id);if(scoreEl)scoreEl.textContent=`⭐ ${p.score} / ${targetScore}`;
+  if(raceScene)raceScene.updateCars(players,targetScore);
+  if(p.score>=targetScore){
+   p.finished=true;
+   players.forEach(other=>{if(other.questionTimer)clearTimeout(other.questionTimer);if(other.nextTimer)clearTimeout(other.nextTimer)});
+   gameRunning=false;
+   setTimeout(()=>showWinner([p]),180);
+   return;
+  }
+  // Benar: langsung dapat soal baru tanpa menunggu pemain lain.
+  issuePlayerQuestion(p);
+ }else{
+  // Salah: beri jeda dua detik hanya untuk pemain ini.
+  p.nextTimer=setTimeout(()=>issuePlayerQuestion(p),2000);
+ }
+}
+function resolveRound(timedOut){
+ // Dipertahankan sebagai fungsi kompatibilitas; soal sekarang berjalan independen per pemain.
+ if(!gameRunning)return;
+ players.forEach(p=>{
+  if(!p.answered&&!p.finished){
+   p.answered=true;p.correct=false;
+   const fb=$('feedbackP'+p.id);if(fb){fb.textContent='WAKTU HABIS';fb.style.color='#9a5b08'}
+   disablePlayerAnswers(p);
+   p.nextTimer=setTimeout(()=>issuePlayerQuestion(p),2000);
+  }
+ });
 }
 function showWinner(winners){
  $('overlay').classList.remove('hidden');
@@ -363,15 +409,14 @@ function sound(type){
   else if(type==='round'){play(440,now,.10,'sine',.055);play(660,now+.09,.12,'sine',.06)}
  }catch(e){console.warn('Efek suara tidak tersedia',e)}
 }
-const originalSubmitPlayer=submitPlayer;
-submitPlayer=function(id,value){const before=players[id]?.answered;originalSubmitPlayer(id,value);if(!before&&players[id]?.answered)sound(players[id].correct?'correct':'wrong')};
 function startGame(){
  if(isPhone()&&selectedCount>2)selectCount(2);
  targetScore=+$('target').value;roundNumber=1;gameRunning=true;$('lobby').classList.add('hidden');$('game').classList.remove('hidden');$('overlay').classList.add('hidden');
  initPlayers();if(!initPhaser()){setStatus('startStatus','Phaser gagal dimuat. Periksa koneksi internet lalu muat ulang.','err');backToMenu();return}
  startRound();sound('start');if(raceScene)raceScene.startAmbience();
 }
-function backToMenu(){gameRunning=false;clearTimeout(questionTimer);$('game').classList.add('hidden');$('overlay').classList.add('hidden');$('lobby').classList.remove('hidden');if(raceScene)raceScene.stopAmbience()}
+function clearPlayerTimers(){players.forEach(p=>{if(p.questionTimer)clearTimeout(p.questionTimer);if(p.nextTimer)clearTimeout(p.nextTimer);p.questionTimer=null;p.nextTimer=null})}
+function backToMenu(){gameRunning=false;clearTimeout(questionTimer);clearPlayerTimers();$('game').classList.add('hidden');$('overlay').classList.add('hidden');$('lobby').classList.remove('hidden');if(raceScene)raceScene.stopAmbience()}
 $('start').addEventListener('click',()=>{
  setStatus('startStatus','');
  try{
@@ -380,7 +425,7 @@ $('start').addEventListener('click',()=>{
   startGame();
  }catch(e){setStatus('startStatus',e.message,'err')}
 });
-$('back').onclick=backToMenu;$('restart').onclick=()=>{gameRunning=false;clearTimeout(questionTimer);startGame()};$('playAgain').onclick=()=>{ $('overlay').classList.add('hidden');startGame()};$('overlayMenu').onclick=backToMenu;
+$('back').onclick=backToMenu;$('restart').onclick=()=>{gameRunning=false;clearTimeout(questionTimer);clearPlayerTimers();startGame()};$('playAgain').onclick=()=>{ $('overlay').classList.add('hidden');startGame()};$('overlayMenu').onclick=backToMenu;
 $('soundToggle').onclick=()=>{soundOn=!soundOn;$('soundToggle').textContent=soundOn?'🔊 Suara: ON':'🔇 Suara: OFF';if(soundOn)sound('correct')};
 $('checkCode').onclick=async()=>{
  const code=$('firebaseCode').value.trim().toUpperCase();setStatus('codeStatus','Memeriksa database…');
@@ -407,7 +452,12 @@ $('downloadTemplate').onclick=()=>{
 };
 function initPhaser(){
  if(!window.Phaser)return false;
- if(phaserGame){phaserGame.destroy(true);phaserGame=null}
+ // Gunakan satu instance Phaser sepanjang sesi halaman. Menghancurkan/membuat
+ // canvas berulang kali dapat meninggalkan canvas hitam setelah restart.
+ if(phaserGame && raceScene){
+  if(raceScene.scene && raceScene.scene.isActive())raceScene.drawWorld();
+  return true;
+ }
  class RaceScene extends Phaser.Scene{
   constructor(){super('race');this.clouds=[];this.cars=[];this.ambience=null;this.cloudOffset=0;this.animTick=0}
   create(){
@@ -416,7 +466,10 @@ function initPhaser(){
    this.time.addEvent({delay:55,loop:true,callback:()=>{if(gameRunning){this.cloudOffset=(this.cloudOffset+0.65)%260;this.animTick++;this.drawWorld()}}});
   }
   drawWorld(){
-   const w=this.scale.width,h=this.scale.height;this.bg.clear();this.cloudLayer.clear();this.track.clear();this.carLayer.clear();this.decor.clear();
+   if(!this.bg||!this.cloudLayer||!this.track||!this.carLayer||!this.decor)return;
+   const w=this.scale.width,h=this.scale.height;
+   if(!w||!h){this.time.delayedCall(120,()=>this.drawWorld());return}
+   this.bg.clear();this.cloudLayer.clear();this.track.clear();this.carLayer.clear();this.decor.clear();
    this.bg.fillGradientStyle(0x72d0ff,0x72d0ff,0xdff6ff,0xdff6ff,1);this.bg.fillRect(0,0,w,h);
    // soft sun and distant hills
    this.bg.fillStyle(0xfff2a8,.95);this.bg.fillCircle(w*.86,h*.2,Math.min(h*.12,45));
