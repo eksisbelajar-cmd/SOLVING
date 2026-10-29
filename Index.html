@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10234a">
+<title>SOLVING · Math Race Battle</title>
+<style>
+:root{--navy:#10234a;--ink:#17233d;--muted:#64748b;--panel:#fff;--line:#dce5f2;--red:#ef4444;--yellow:#facc15;--green:#22c55e;--blue:#3b82f6}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:#eaf1fb}button,input,select{font:inherit}button{cursor:pointer;border:0}
+.hidden{display:none!important}
+#lobby{min-height:100%;padding:22px;display:grid;place-items:center;background:radial-gradient(circle at 12% 12%,#c9f1ff 0,transparent 30%),radial-gradient(circle at 90% 90%,#d7d5ff 0,transparent 28%),linear-gradient(135deg,#f6f9ff,#e9effb)}
+.lobby-card{width:min(100%,1000px);background:#fff;border:1px solid #dbe5f4;border-radius:26px;box-shadow:0 24px 70px #19305b1c;overflow:hidden}
+.hero{padding:26px 30px;color:white;background:linear-gradient(120deg,#10234a,#234e91 65%,#3477b9);position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:240px;height:240px;border:35px solid #ffffff12;border-radius:50%;right:-35px;top:-100px}
+.brand{font-size:12px;letter-spacing:.2em;font-weight:900;color:#a8dcff}.hero h1{font-size:clamp(26px,4vw,42px);line-height:1.05;margin:8px 0}.hero p{margin:0;color:#d8eaff}
+.lobby-content{padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:22px}.section{border:1px solid var(--line);border-radius:18px;padding:18px;background:#fbfdff;min-width:0}.section h2{font-size:16px;margin:0 0 14px;color:#1b3768}.field{display:flex;flex-direction:column;gap:7px;margin:12px 0}.field label{font-size:12px;font-weight:800;color:#52617b}.field input,.field select{width:100%;padding:12px 13px;border:1px solid #ccd8e8;border-radius:11px;background:#fff;color:#17233d;outline:none}.field input:focus,.field select:focus{border-color:#4386ed;box-shadow:0 0 0 3px #4386ed20}
+.mode-tabs{display:flex;gap:7px;margin-bottom:14px}.mode-tab{flex:1;padding:10px 6px;border-radius:10px;background:#eaf0fa;color:#496080;font-weight:800;font-size:12px}.mode-tab.active{background:#203e75;color:#fff}.mode-panel{display:none}.mode-panel.active{display:block}
+.player-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.player-choice{padding:13px 5px;border:2px solid #dce5f2;border-radius:13px;background:#fff;font-weight:900;color:#435572}.player-choice.active{border-color:#2e69c7;background:#edf5ff;color:#174a9a;box-shadow:0 0 0 3px #2e69c718}.player-choice small{display:block;font-size:10px;font-weight:700;margin-top:3px}.notice{font-size:12px;color:#65748b;line-height:1.5;margin:10px 0}.primary{width:100%;padding:15px 18px;border-radius:13px;background:linear-gradient(100deg,#ff8a24,#f15b32);color:#fff;font-weight:950;letter-spacing:.04em;box-shadow:0 7px 0 #c9472b;transition:transform .12s,box-shadow .12s}.primary:active{transform:translateY(4px);box-shadow:0 3px 0 #c9472b}.secondary{padding:10px 13px;border-radius:10px;background:#e8eef8;color:#29456f;font-weight:800}.status{font-size:12px;font-weight:800;min-height:18px;margin-top:7px}.status.ok{color:#13834a}.status.err{color:#c23434}
+#game{height:100dvh;min-height:0;display:flex;flex-direction:column;background:#eaf2ff;overflow:hidden}
+.topbar{height:54px;flex:0 0 54px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:#10234a;color:#fff;gap:12px;z-index:3}.topbar .title{font-weight:950;letter-spacing:.06em;font-size:clamp(12px,1.5vw,18px)}.top-actions{display:flex;gap:7px}.top-actions button{padding:8px 11px;border-radius:9px;background:#ffffff18;color:white;font-size:12px;font-weight:800;border:1px solid #ffffff28}
+#raceCanvas{height:clamp(115px,21vh,205px);flex:0 0 auto;position:relative;background:#b9e8ff;overflow:hidden;border-bottom:4px solid #fff}
+#raceCanvas canvas{display:block;width:100%!important;height:100%!important}
+.race-meta{position:absolute;top:9px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none;z-index:1}.pill{background:#ffffffd9;backdrop-filter:blur(6px);border:1px solid #fff;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:900;color:#19335c;box-shadow:0 2px 8px #183a6015}
+#players{flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:5px;padding:5px;background:#10234a}
+.player-panel{--pc:#ef4444;--soft:#fff0f0;min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--soft);border:2px solid var(--pc);border-radius:13px;overflow:hidden;position:relative}
+.player-head{display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--pc);color:#fff;padding:7px 10px;min-height:36px}.player-name{font-size:clamp(11px,1.3vw,16px);font-weight:950;white-space:nowrap}.player-score{background:#ffffff2b;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:900}
+.player-main{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:8px 10px 5px;min-height:0;flex:1}
+.question{font-weight:950;font-size:clamp(16px,2.1vw,29px);line-height:1.15;text-align:center;color:#142b50;overflow-wrap:anywhere}.subquestion{font-size:10px;color:#63728b;font-weight:800;text-align:center}
+.answer-display{width:min(100%,360px);min-height:37px;border:2px solid color-mix(in srgb,var(--pc),white 65%);background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:5px 8px;font-weight:900;font-size:clamp(15px,2vw,23px);color:#142b50;overflow:hidden;overflow-wrap:anywhere}
+.answer-area{padding:7px;display:flex;flex-direction:column;gap:7px;min-height:0}
+.pg-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-height:0;flex:1}
+.answer-btn{border:2px solid #ffffffaa;border-radius:10px;background:var(--pc);color:#fff;font-weight:950;font-size:clamp(13px,1.6vw,20px);min-height:34px;padding:5px;box-shadow:0 3px 0 color-mix(in srgb,var(--pc),#000 20%);overflow-wrap:anywhere}
+.answer-btn:active{transform:translateY(2px);box-shadow:none}.answer-btn:disabled{opacity:.58;filter:grayscale(.25)}
+.keypad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;min-height:0;flex:1}
+.key{background:#fff;border:1px solid #d8e2ef;border-radius:8px;color:#263d60;font-size:clamp(12px,1.4vw,18px);font-weight:900;min-height:29px;box-shadow:0 2px 0 #cbd6e5}.key.enter{background:#10234a;color:#fff}.key.del{background:#ffdf9a;color:#704300}
+.player-footer{font-size:10px;font-weight:900;text-align:center;color:#52647f;padding:0 6px 6px;min-height:17px}
+#overlay{position:fixed;inset:0;z-index:10;background:#08152ce8;display:grid;place-items:center;padding:18px}.overlay-card{width:min(100%,520px);text-align:center;background:#fff;border-radius:24px;padding:28px;box-shadow:0 30px 100px #0006}.trophy{font-size:54px}.overlay-card h2{font-size:clamp(26px,5vw,42px);margin:8px 0;color:#16305b}.overlay-card p{color:#60708a}
+@media(min-width:900px){#players{grid-template-rows:minmax(0,1fr);grid-template-columns:repeat(var(--count,2),minmax(0,1fr));gap:8px;padding:8px}.player-panel{border-radius:16px}.player-head{padding:10px 13px}.player-main{gap:12px}.answer-area{padding:10px;gap:9px}.keypad{gap:7px}.key{min-height:36px;border-radius:10px}}
+@media(max-width:700px){#lobby{padding:10px}.lobby-content{grid-template-columns:1fr;padding:13px;gap:12px}.hero{padding:20px}.section{padding:14px}.topbar{height:46px;flex-basis:46px;padding:0 8px}.top-actions button{padding:7px;font-size:10px}#raceCanvas{height:112px;flex-basis:112px}#players{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:4px;padding:4px}.player-head{padding:6px 7px;min-height:30px}.player-main{padding:5px;gap:5px}.question{font-size:clamp(15px,4vw,22px)}.answer-display{min-height:33px}.answer-area{padding:5px;gap:5px}.pg-options{gap:5px}.answer-btn{font-size:clamp(12px,3.5vw,16px);min-height:32px}.keypad{gap:4px}.key{font-size:14px;min-height:30px}.player-footer{font-size:9px}.pill{font-size:9px;padding:5px 7px}}
+@media(max-width:390px){.player-name{font-size:10px}.player-score{font-size:9px;padding:2px 5px}.answer-btn{font-size:11px}.key{font-size:12px;min-height:27px}.question{font-size:14px}}
+
+/* SOLVING TURBO ARENA — visual upgrade */
+:root{--navy:#07142f;--ink:#102447;--muted:#91a4c7;--line:#dce7ff}
+html,body{overscroll-behavior:none}
+button,input,select{touch-action:manipulation}
+button{-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation} .answer-area,.player-panel{touch-action:pan-y}
+#lobby{background:radial-gradient(ellipse at 10% 0%,#3ad5ff55,transparent 30%),radial-gradient(ellipse at 100% 90%,#a855f755,transparent 35%),linear-gradient(135deg,#07142f,#102c62 55%,#07142f);padding:24px}
+.lobby-card{border:1px solid #ffffff35;border-radius:30px;background:linear-gradient(145deg,#ffffff,#edf4ff);box-shadow:0 35px 100px #0008;overflow:hidden}
+.hero{padding:32px 34px;background:linear-gradient(115deg,#07142f 0%,#173c82 48%,#6b32bd 100%);isolation:isolate}
+.hero:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.2;background-image:radial-gradient(#fff 1px,transparent 1px);background-size:18px 18px}
+.hero:after{width:280px;height:280px;border:42px solid #5ee7ff24;box-shadow:0 0 0 24px #ffffff08,0 0 60px #37d7ff25;right:-70px;top:-130px}
+.brand{color:#7af0ff;text-shadow:0 0 20px #36dfff80}
+.hero h1{font-size:clamp(30px,5vw,54px);font-weight:1000;letter-spacing:-.04em;text-shadow:0 5px 25px #0005}
+.hero p{font-weight:650;color:#e2edff}
+.section{border:1px solid #dce7ff;border-radius:20px;box-shadow:0 9px 25px #173c8210;background:linear-gradient(145deg,#fff,#f5f8ff)}
+.section h2{color:#173c82;letter-spacing:.04em}
+.player-choice{transition:transform .18s,box-shadow .18s,border-color .18s;background:linear-gradient(145deg,#fff,#f3f7ff)}
+.player-choice:hover{transform:translateY(-2px);box-shadow:0 8px 18px #1e4a8a1c}
+.player-choice.active{background:linear-gradient(145deg,#183e83,#2868c9);border-color:#73e5ff;color:white;box-shadow:0 0 0 3px #3c9eff22,0 8px 18px #1e4a8a30}
+.primary{background:linear-gradient(100deg,#ff9d22,#ff4c56 50%,#b52cff);box-shadow:0 7px 0 #812d7b,0 12px 28px #e64a7138;font-size:15px}
+#game{background:#07142f}
+.topbar{background:linear-gradient(90deg,#07142f,#163d82 55%,#4d238a);border-bottom:1px solid #ffffff25;box-shadow:0 5px 24px #0004}
+.topbar .title{color:#eaf7ff;text-shadow:0 0 18px #5ee7ff80}
+.top-actions button{background:#ffffff12;border-color:#ffffff35;min-height:36px}
+#raceCanvas{height:clamp(130px,24vh,235px);border:0;border-bottom:3px solid #61e8ff;box-shadow:inset 0 -18px 30px #07142f30,0 5px 22px #0004}
+.race-meta .pill{background:#081b40e8;color:#e8f8ff;border:1px solid #6de9ff80;box-shadow:0 0 16px #32d7ff30;font-size:11px;letter-spacing:.05em}
+#players{background:linear-gradient(135deg,#07142f,#122b5b);gap:7px;padding:7px}
+.player-panel{border:2px solid var(--pc);border-radius:18px;background:linear-gradient(155deg,#fff,var(--soft));box-shadow:inset 0 0 0 1px #ffffffa0,0 8px 22px #0003;transition:box-shadow .2s;isolation:isolate}
+.player-panel:before{content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--pc),transparent 76%),transparent 68%)}
+.player-head{background:linear-gradient(110deg,var(--pc),color-mix(in srgb,var(--pc),#172554 25%));min-height:39px;text-shadow:0 1px 2px #0003}
+.player-name{letter-spacing:.04em}
+.player-score{background:#081b4030;border:1px solid #ffffff55}
+.question{font-size:clamp(19px,2.4vw,34px);letter-spacing:-.035em;text-shadow:0 2px 0 #fff}
+.subquestion{color:#627593;letter-spacing:.08em;text-transform:uppercase;font-size:9px}
+.answer-display{border:2px solid color-mix(in srgb,var(--pc),white 30%);box-shadow:inset 0 2px 5px #1024470b,0 4px 12px #1024470b;min-height:42px}
+.answer-btn{border:1px solid #ffffffb8;background:linear-gradient(145deg,color-mix(in srgb,var(--pc),white 8%),var(--pc));box-shadow:0 4px 0 color-mix(in srgb,var(--pc),#000 30%),0 5px 12px #10244712;transition:transform .1s,filter .1s;min-height:42px}
+.answer-btn:active,.key:active{transform:scale(.96);filter:brightness(1.08)}
+.answer-btn:disabled{opacity:.68;filter:saturate(.6)}
+.key{min-height:37px;box-shadow:0 3px 0 #cbd6e5,0 5px 10px #1024470c;touch-action:manipulation}
+.key.enter{background:linear-gradient(110deg,#112b5a,#2459a8);box-shadow:0 3px 0 #07142f}
+.key.del{background:linear-gradient(110deg,#ffe9a6,#ffd36c)}
+.player-footer{letter-spacing:.08em;padding-bottom:7px}
+#overlay{background:radial-gradient(ellipse at 50% 30%,#17478be8,#040b1bef);backdrop-filter:blur(8px)}
+.overlay-card{border:1px solid #ffffffa8;background:linear-gradient(145deg,#fff,#eaf4ff);box-shadow:0 0 0 8px #ffffff10,0 30px 100px #0008}
+.trophy{filter:drop-shadow(0 8px 12px #e5a40055);animation:trophyBounce 1.4s ease-in-out infinite}
+@keyframes trophyBounce{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+@media(min-width:900px){
+ #players{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+ #players[data-count="2"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}
+ #players[data-count="3"] .player-panel:last-child{grid-column:1/-1}
+ .player-main{gap:8px}.answer-area{padding:8px;gap:7px}
+}
+@media(max-width:700px){
+ #game{height:100dvh}
+ #raceCanvas{height:clamp(100px,15vh,132px);flex-basis:clamp(100px,15vh,132px)}
+ #players{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:4px;padding:4px}
+ .player-panel{border-radius:12px}.player-head{min-height:32px}
+ .question{font-size:clamp(16px,4.3vw,23px)}.answer-btn{min-height:38px}.key{min-height:30px}
+}
+@media(max-width:390px){.answer-btn{min-height:34px}.player-main{gap:4px}}
+
+</style>
+</head>
+<body>
+<section id="lobby">
+  <div class="lobby-card">
+    <header class="hero"><div class="brand">SOLVING · SMART ONLINE LEARNING</div><h1>MATH RACE BATTLE</h1><p>Berpikir cepat. Jawab tepat. Melaju menuju garis finis!</p></header>
+    <div class="lobby-content">
+      <section class="section">
+        <h2>01 / PENGATURAN BALAPAN</h2>
+        <div class="field"><label>JUMLAH PEMAIN</label><div class="player-choices" id="playerChoices">
+          <button class="player-choice active" data-count="2">2 PEMAIN<small>Head to head</small></button>
+          <button class="player-choice" data-count="3">3 PEMAIN<small>Grand race</small></button>
+          <button class="player-choice" data-count="4">4 PEMAIN<small>Full battle</small></button>
+        </div><div id="deviceNote" class="notice"></div></div>
+        <div class="field"><label>JENIS SOAL</label><select id="operation"><option value="mix">Campuran (+ − × ÷)</option><option value="add">Penjumlahan (+)</option><option value="sub">Pengurangan (−)</option><option value="mul">Perkalian (×)</option><option value="div">Pembagian (÷)</option></select></div>
+        <div class="field"><label>KESULITAN</label><select id="level"><option value="easy">Mudah · hasil sampai 25</option><option value="medium" selected>Sedang · hasil sampai 60</option><option value="hard">Menantang · hasil sampai 120</option></select></div>
+        <div class="field"><label>JUMLAH POIN UNTUK MENANG</label><select id="target"><option value="5">5 poin · cepat</option><option value="8" selected>8 poin · standar</option><option value="12">12 poin · panjang</option></select></div>
+      </section>
+      <section class="section">
+        <h2>02 / PILIH SUMBER SOAL</h2>
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="default">SOAL OTOMATIS</button>
+          <button class="mode-tab" data-mode="firebase">KODE SOAL</button>
+          <button class="mode-tab" data-mode="excel">EXCEL</button>
+        </div>
+        <div class="mode-panel active" id="panel-default"><p class="notice">Soal diacak secara terpisah untuk setiap pemain agar tidak mudah saling menyontek. Setiap pemain memiliki area jawab sendiri.</p></div>
+        <div class="mode-panel" id="panel-firebase">
+          <div class="field"><label>KODE BANK SOAL</label><input id="firebaseCode" placeholder="Contoh: K3MTK-01" autocomplete="off"></div>
+          <button class="secondary" id="checkCode">Periksa kode soal</button><div class="status" id="codeStatus"></div>
+          <div class="field"><label>MODE JAWABAN</label><select id="firebaseType"><option value="PG">Pilihan ganda</option><option value="IA">Isian angka</option><option value="IT">Isian teks</option></select></div>
+          <p class="notice">Kode diperiksa melalui database soal yang digunakan pada versi sebelumnya.</p>
+        </div>
+        <div class="mode-panel" id="panel-excel">
+          <div class="field"><label>FILE EXCEL (.xlsx / .xls)</label><input type="file" id="excelFile" accept=".xlsx,.xls"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" id="uploadExcel">Baca file</button><button class="secondary" id="downloadTemplate">Unduh template</button></div>
+          <div class="status" id="excelStatus">Kolom: Soal (q), Jawaban Benar (a), Opsi Salah 1 (w1), Opsi Salah 2 (w2), Opsi Salah 3 (w3).</div>
+          <div class="field"><label>MODE JAWABAN</label><select id="excelType"><option value="PG">Pilihan ganda</option><option value="IA">Isian angka</option><option value="IT">Isian teks</option></select></div>
+        </div>
+      </section>
+    </div>
+    <div style="padding:0 24px 24px"><button id="start" class="primary">MULAI BALAPAN　🏁</button><div id="startStatus" class="status"></div><p class="notice">Catatan: mode 3–4 pemain tersedia di layar lebar. Pada HP, permainan dibatasi maksimal 2 pemain agar tombol tetap nyaman digunakan.</p></div>
+  </div>
+</section>
+
+<main id="game" class="hidden">
+  <header class="topbar"><button id="back" class="top-actions">← Menu</button><div class="title">SOLVING · MATH RACE</div><div class="top-actions"><button id="soundToggle">🔊 Suara: ON</button><button id="restart">↻ Ulang</button></div></header>
+  <div id="raceCanvas"><div class="race-meta"><span class="pill" id="roundPill">RONDE 1</span><span class="pill" id="targetPill">TARGET 8 POIN</span></div></div>
+  <section id="players" style="--count:2"></section>
+</main>
+<div id="overlay" class="hidden"><div class="overlay-card"><div class="trophy">🏆</div><h2 id="winnerTitle">PEMENANG!</h2><p id="winnerDesc">Balapan selesai.</p><button class="primary" id="playAgain">BALAPAN LAGI</button><button class="secondary" id="overlayMenu" style="margin-top:12px;width:100%">KEMBALI KE MENU</button></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script>
+'use strict';
+const firebaseConfig={apiKey:"AIzaSyBel2Z7SYGcN2kyFwmR3nWJQsF3KWC-_Mk",authDomain:"bank-soal-sd.firebaseapp.com",databaseURL:"https://bank-soal-sd-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"bank-soal-sd",storageBucket:"bank-soal-sd.firebasestorage.app",messagingSenderId:"992474126052",appId:"1:992474126052:web:551a3760d4ef932e163ef1"};
+let db=null;
+try{if(window.firebase){if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database()}}catch(e){console.warn('Firebase tidak tersedia',e)}
+const COLORS=[
+ {name:'MERAH',hex:0xef4444,css:'#ef4444',soft:'#fff0f0',dark:'#9f2020',letter:'M'},
+ {name:'KUNING',hex:0xfacc15,css:'#facc15',soft:'#fff9dc',dark:'#8a5a00',letter:'K'},
+ {name:'HIJAU',hex:0x22c55e,css:'#22c55e',soft:'#eafff0',dark:'#126b38',letter:'H'},
+ {name:'BIRU',hex:0x3b82f6,css:'#3b82f6',soft:'#edf5ff',dark:'#164b9b',letter:'B'}
+];
+let selectedCount=2,sourceMode='default',questionBank=[],firebaseBank=[],firebaseMeta='IA',customBank=[],customType='PG';
+let players=[],roundQuestion=null,roundNumber=1,targetScore=8,roundLocked=false,gameRunning=false, soundOn=true, audioCtx=null,phaserGame=null,raceScene=null,questionTimer=null;
+const $=id=>document.getElementById(id);
+const isPhone=()=>matchMedia('(max-width:700px)').matches || (navigator.maxTouchPoints>0 && Math.min(screen.width,screen.height)<600);
+function setStatus(id,msg,type=''){const el=$(id);el.textContent=msg;el.className='status '+type}
+function escapeHTML(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function shuffle(a){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x}
+function updateDeviceUI(){const phone=isPhone();$('deviceNote').textContent=phone?'Mode HP aktif: hanya 2 pemain yang dapat dipilih agar area jawab tetap nyaman.':'Layar lebar: pilih 2, 3, atau 4 pemain. Untuk PID/Smart TV, gunakan tampilan landscape.';document.querySelectorAll('.player-choice').forEach(b=>{const n=+b.dataset.count;b.disabled=phone&&n>2;b.style.opacity=b.disabled?'.35':'1';b.style.cursor=b.disabled?'not-allowed':'pointer'});if(phone&&selectedCount>2)selectCount(2)}
+function selectCount(n){if(isPhone()&&n>2)n=2;selectedCount=n;document.querySelectorAll('.player-choice').forEach(b=>b.classList.toggle('active',+b.dataset.count===n))}
+document.querySelectorAll('.player-choice').forEach(b=>b.addEventListener('click',()=>selectCount(+b.dataset.count)));
+document.querySelectorAll('.mode-tab').forEach(b=>b.addEventListener('click',()=>{sourceMode=b.dataset.mode;document.querySelectorAll('.mode-tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.mode-panel').forEach(x=>x.classList.remove('active'));$('panel-'+sourceMode).classList.add('active')}));
+window.addEventListener('resize',updateDeviceUI);updateDeviceUI();
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function makeMathQuestion(){
+ const level=$('level').value;const max=level==='easy'?25:level==='medium'?60:120;
+ let op=$('operation').value;if(op==='mix')op=['add','sub','mul','div'][randInt(0,3)];
+ let a,b,r,symbol;
+ if(op==='add'){a=randInt(1,max);b=randInt(1,max);r=a+b;while(r>max){a=randInt(1,max);b=randInt(1,max);r=a+b}symbol='+'}
+ else if(op==='sub'){a=randInt(1,max);b=randInt(1,a);r=a-b;symbol='−'}
+ else if(op==='mul'){const cap=level==='easy'?5:level==='medium'?10:12;a=randInt(1,cap);b=randInt(1,cap);r=a*b;symbol='×'}
+ else {b=randInt(1,level==='easy'?5:12);r=randInt(1,level==='easy'?5:level==='medium'?10:12);a=b*r;if(a>max){b=randInt(1,5);r=randInt(1,Math.max(1,Math.floor(max/b)));a=b*r}symbol='÷'}
+ return {q:`${a} ${symbol} ${b} = ?`,a:String(r),kind:'IA'};
+}
+function normalizeQuestion(q){
+ const item={q:String(q.q??q.soal??'').trim(),a:String(q.a??q.jawaban??'').trim(),w1:String(q.w1??''),w2:String(q.w2??''),w3:String(q.w3??'')};
+ if(!item.q||!item.a)return null;
+ item.kind=(q.kind||q.tipe||'').toUpperCase();return item;
+}
+function newQuestion(usedQuestions=new Set()){
+ if(sourceMode==='default')return makeMathQuestion();
+ if(sourceMode==='firebase'||sourceMode==='excel'){
+   const bank=sourceMode==='firebase'?firebaseBank:customBank;
+   if(!bank.length)throw new Error('Bank soal kosong. Periksa sumber soal terlebih dahulu.');
+   let available=bank.map((_,i)=>i).filter(i=>!usedQuestions.has(i));
+   if(!available.length)available=bank.map((_,i)=>i);
+   const index=available[randInt(0,available.length-1)];
+   usedQuestions.add(index);
+   return {...bank[index]};
+ }
+ return makeMathQuestion();
+}
+function correctAnswers(q){return String(q.a).split('|').map(s=>s.trim().toLocaleLowerCase('id-ID'))}
+function makeOptions(q){const vals=[q.a,q.w1,q.w2,q.w3].filter(v=>String(v??'').trim()!=='').map(v=>String(v).trim());const unique=[...new Set(vals)];while(unique.length<4){const n=String(randInt(1,99));if(!unique.includes(n)&&n!==String(q.a))unique.push(n)}return shuffle(unique).slice(0,4)}
+function initPlayers(){
+ players=Array.from({length:selectedCount},(_,i)=>({id:i,color:COLORS[i],score:0,answer:'',answered:false,correct:false,options:[],locked:false}));
+ $('players').style.setProperty('--count',selectedCount);$('players').dataset.count=String(selectedCount);
+ $('players').innerHTML=players.map(p=>`<article class="player-panel" id="panelP${p.id}" style="--pc:${p.color.css};--soft:${p.color.soft}">
+   <div class="player-head"><span class="player-name">🚗 PEMAIN ${p.id+1} · ${p.color.name}</span><span class="player-score" id="scoreP${p.id}">⭐ 0 / ${targetScore}</span></div>
+   <div class="player-main"><div class="question" id="questionP${p.id}">Siap balapan?</div><div class="subquestion" id="subP${p.id}">Soal acak khusus pemain ini</div><div class="answer-display" id="displayP${p.id}">Pilih jawaban</div></div>
+   <div class="answer-area" id="answersP${p.id}"></div><div class="player-footer" id="feedbackP${p.id}">MENUNGGU JAWABAN</div>
+ </article>`).join('');
+}
+function setupAnswerUI(p){
+ const box=$('answersP'+p.id);box.innerHTML='';
+ const type=sourceMode==='default'?'IA':sourceMode==='firebase'?($('firebaseType').value):$('excelType').value;
+ if(type==='PG'){
+   const options=makeOptions(p.question);p.options=options;
+   const grid=document.createElement('div');grid.className='pg-options';
+   options.forEach(opt=>{const b=document.createElement('button');b.className='answer-btn';b.textContent=opt;b.addEventListener('click',()=>submitPlayer(p.id,opt));grid.appendChild(b)});
+   box.appendChild(grid);
+ }else if(type==='IT'){
+   const inp=document.createElement('input');inp.type='text';inp.placeholder='Ketik jawaban…';inp.autocomplete='off';inp.className='answer-display';inp.style.width='100%';inp.id='textInputP'+p.id;
+   inp.addEventListener('keydown',e=>{if(e.key==='Enter')submitPlayer(p.id,inp.value)});box.appendChild(inp);
+   const row=document.createElement('div');row.style.cssText='display:flex;gap:6px';
+   const del=document.createElement('button');del.className='key del';del.textContent='HAPUS';del.onclick=()=>inp.value='';
+   const ok=document.createElement('button');ok.className='key enter';ok.textContent='JAWAB';ok.onclick=()=>submitPlayer(p.id,inp.value);row.append(del,ok);box.appendChild(row);
+ }else{
+   const keypad=document.createElement('div');keypad.className='keypad';
+   ['1','2','3','⌫','4','5','6','C','7','8','9','−','0','.','±','OK'].forEach(k=>{const b=document.createElement('button');b.className='key'+(['OK'].includes(k)?' enter':['⌫','C','±'].includes(k)?' del':'');b.textContent=k;b.addEventListener('click',()=>{if(p.answered)return;if(k==='OK')submitPlayer(p.id,p.answer);else if(k==='⌫')p.answer=p.answer.slice(0,-1);else if(k==='C')p.answer='';else if(k==='±')p.answer=p.answer.startsWith('-')?p.answer.slice(1):'-'+p.answer;else p.answer+=k;updateAnswerDisplay(p)});keypad.appendChild(b)});
+   box.appendChild(keypad);
+ }
+}
+function updateAnswerDisplay(p){const el=$('displayP'+p.id);if(el)el.textContent=p.answer||'Masukkan jawaban'}
+function startRound(){
+ if(!gameRunning)return;
+ roundLocked=false;const usedQuestions=new Set();
+ $('roundPill').textContent='RONDE '+roundNumber;$('targetPill').textContent='TARGET '+targetScore+' POIN';
+ players.forEach(p=>{p.question=newQuestion(usedQuestions);p.answer='';p.answered=false;p.correct=false;p.locked=false;$('questionP'+p.id).textContent=p.question.q;$('subP'+p.id).textContent='Soal acak khusus pemain ini';$('feedbackP'+p.id).textContent='SIAP MENJAWAB';$('feedbackP'+p.id).style.color=p.color.dark;setupAnswerUI(p);updateAnswerDisplay(p)});
+ if(raceScene)raceScene.updateCars(players,targetScore);
+ // Round-based lockstep: every active player receives the same question; no next question until all have answered.
+ clearTimeout(questionTimer);questionTimer=setTimeout(()=>resolveRound(true),30000);
+}
+function submitPlayer(id,value){
+ const p=players[id];if(!gameRunning||roundLocked||!p||p.answered)return;
+ p.answer=String(value??'').trim();p.answered=true;p.correct=correctAnswers(p.question).includes(p.answer.toLocaleLowerCase('id-ID'));
+ $('displayP'+id).textContent=p.answer||'—';
+ $('feedbackP'+id).textContent=p.correct?'✓ BENAR!':'✕ BELUM TEPAT';$('feedbackP'+id).style.color=p.correct?'#128044':'#b42323';
+ $('answersP'+id).querySelectorAll('button').forEach(b=>b.disabled=true);
+ const input=$('textInputP'+id);if(input)input.disabled=true;
+ if(players.every(x=>x.answered))resolveRound(false);
+}
+function resolveRound(timedOut){
+ if(roundLocked||!gameRunning)return;roundLocked=true;clearTimeout(questionTimer);
+ players.forEach(p=>{
+  if(!p.answered){p.answered=true;p.correct=false;$('feedbackP'+p.id).textContent=timedOut?'WAKTU HABIS':'BELUM MENJAWAB';$('feedbackP'+p.id).style.color='#9a5b08'}
+  if(p.correct)p.score++;
+  $('scoreP'+p.id).textContent=`⭐ ${p.score} / ${targetScore}`;
+  $('answersP'+p.id).querySelectorAll('button,input').forEach(b=>b.disabled=true);
+ });
+ if(raceScene)raceScene.updateCars(players,targetScore);
+ const winners=players.filter(p=>p.score>=targetScore);
+ if(winners.length){
+   gameRunning=false;const winner=winners.sort((a,b)=>b.score-a.score)[0];
+   setTimeout(()=>showWinner(winners),800);return;
+ }
+ roundNumber++;
+ setTimeout(()=>{if(gameRunning)startRound()},900);
+}
+function showWinner(winners){
+ $('overlay').classList.remove('hidden');
+ if(winners.length>1){$('winnerTitle').textContent='HASIL IMBANG!';$('winnerDesc').textContent='Lebih dari satu pemain mencapai target pada ronde yang sama.'}
+ else{$('winnerTitle').textContent=`PEMAIN ${winners[0].id+1} MENANG!`;$('winnerDesc').textContent=`Mobil ${winners[0].color.name.toLowerCase()} mencapai ${targetScore} poin lebih dahulu.`}
+ sound('win');
+}
+function sound(type){
+ if(!soundOn)return;
+ try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const now=audioCtx.currentTime;const notes=type==='correct'?[660,880]:type==='wrong'?[220]:type==='win'?[523,659,784,1046]:[330,440];notes.forEach((f,i)=>{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type=type==='wrong'?'triangle':'sine';osc.frequency.value=f;gain.gain.setValueAtTime(.0001,now+i*.09);gain.gain.exponentialRampToValueAtTime(.12,now+i*.09+.02);gain.gain.exponentialRampToValueAtTime(.0001,now+i*.09+.13);osc.connect(gain);gain.connect(audioCtx.destination);osc.start(now+i*.09);osc.stop(now+i*.09+.15)})}catch(e){}
+}
+const originalSubmitPlayer=submitPlayer;
+submitPlayer=function(id,value){const before=players[id]?.answered;originalSubmitPlayer(id,value);if(!before&&players[id]?.answered)sound(players[id].correct?'correct':'wrong')};
+function startGame(){
+ if(isPhone()&&selectedCount>2)selectCount(2);
+ targetScore=+$('target').value;roundNumber=1;gameRunning=true;$('lobby').classList.add('hidden');$('game').classList.remove('hidden');$('overlay').classList.add('hidden');
+ initPlayers();if(!initPhaser()){setStatus('startStatus','Phaser gagal dimuat. Periksa koneksi internet lalu muat ulang.','err');backToMenu();return}
+ startRound();if(raceScene)raceScene.startAmbience();
+}
+function backToMenu(){gameRunning=false;clearTimeout(questionTimer);$('game').classList.add('hidden');$('overlay').classList.add('hidden');$('lobby').classList.remove('hidden');if(raceScene)raceScene.stopAmbience()}
+$('start').addEventListener('click',()=>{
+ setStatus('startStatus','');
+ try{
+  if(sourceMode==='firebase'&&!firebaseBank.length)throw new Error('Periksa kode soal terlebih dahulu.');
+  if(sourceMode==='excel'&&!customBank.length)throw new Error('Silakan baca file Excel terlebih dahulu.');
+  startGame();
+ }catch(e){setStatus('startStatus',e.message,'err')}
+});
+$('back').onclick=backToMenu;$('restart').onclick=()=>{gameRunning=false;clearTimeout(questionTimer);startGame()};$('playAgain').onclick=()=>{ $('overlay').classList.add('hidden');startGame()};$('overlayMenu').onclick=backToMenu;
+$('soundToggle').onclick=()=>{soundOn=!soundOn;$('soundToggle').textContent=soundOn?'🔊 Suara: ON':'🔇 Suara: OFF';if(soundOn)sound('correct')};
+$('checkCode').onclick=async()=>{
+ const code=$('firebaseCode').value.trim().toUpperCase();setStatus('codeStatus','Memeriksa database…');
+ if(!code)return setStatus('codeStatus','Masukkan kode soal terlebih dahulu.','err');
+ if(!db)return setStatus('codeStatus','Firebase tidak dapat diinisialisasi. Periksa koneksi.','err');
+ const m=code.match(/^K([1-6])/);if(!m)return setStatus('codeStatus','Format kode tidak sesuai. Contoh: K3MTK-01','err');
+ try{const snap=await db.ref(`DRIVE_SOAL/KELAS_${m[1]}/${code}`).once('value');if(!snap.exists())throw new Error('Kode tidak ditemukan.');
+ const data=snap.val();firebaseBank=(Array.isArray(data.list_soal)?data.list_soal:[]).map(normalizeQuestion).filter(Boolean);firebaseMeta=(data.metadata&&data.metadata.tipeSoal)||'IA';
+ if(!firebaseBank.length)throw new Error('Kode ditemukan, tetapi daftar soal kosong atau formatnya tidak sesuai.');
+ if(!$('firebaseType').dataset.userChanged)$('firebaseType').value=(firebaseMeta==='IT'?'IT':firebaseMeta==='PG'?'PG':'IA');
+ setStatus('codeStatus',`✓ ${firebaseBank.length} soal siap digunakan. Tipe data: ${firebaseMeta}.`,'ok');
+ }catch(e){firebaseBank=[];setStatus('codeStatus','Gagal: '+e.message,'err')}
+};
+$('firebaseType').addEventListener('change',()=>{$('firebaseType').dataset.userChanged='1'});
+$('uploadExcel').onclick=async()=>{
+ const file=$('excelFile').files[0];if(!file)return setStatus('excelStatus','Pilih file Excel terlebih dahulu.','err');
+ if(!window.XLSX)return setStatus('excelStatus','Pustaka Excel belum termuat. Periksa internet.','err');
+ try{const data=new Uint8Array(await file.arrayBuffer());const wb=XLSX.read(data,{type:'array'});const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});customBank=rows.slice(1).map(r=>normalizeQuestion({q:r[0],a:r[1],w1:r[2],w2:r[3],w3:r[4]})).filter(Boolean);if(!customBank.length)throw new Error('Tidak ditemukan baris soal yang valid.');setStatus('excelStatus',`✓ ${customBank.length} soal berhasil dibaca.`,'ok')}
+ catch(e){customBank=[];setStatus('excelStatus','Gagal membaca file: '+e.message,'err')}
+};
+$('downloadTemplate').onclick=()=>{
+ if(!window.XLSX)return alert('Pustaka Excel belum termuat. Periksa koneksi internet.');
+ const ws=XLSX.utils.aoa_to_sheet([['Soal (q)','Jawaban Benar (a)','Opsi Salah 1 (w1)','Opsi Salah 2 (w2)','Opsi Salah 3 (w3)'],['1 + 1 = ?','2','3','4','5'],['Ibukota Indonesia','Jakarta','Bandung','Surabaya','Medan']]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Template Soal');XLSX.writeFile(wb,'Template_Soal_MathRace.xlsx')
+};
+function initPhaser(){
+ if(!window.Phaser)return false;
+ if(phaserGame){phaserGame.destroy(true);phaserGame=null}
+ class RaceScene extends Phaser.Scene{
+  constructor(){super('race');this.clouds=[];this.cars=[];this.ambience=null;this.cloudOffset=0;this.animTick=0}
+  create(){
+   this.bg=this.add.graphics();this.cloudLayer=this.add.graphics();this.track=this.add.graphics();this.carLayer=this.add.graphics();this.decor=this.add.graphics();
+   this.drawWorld();this.scale.on('resize',()=>this.drawWorld());
+   this.time.addEvent({delay:55,loop:true,callback:()=>{if(gameRunning){this.cloudOffset=(this.cloudOffset+0.65)%260;this.animTick++;this.drawWorld()}}});
+  }
+  drawWorld(){
+   const w=this.scale.width,h=this.scale.height;this.bg.clear();this.cloudLayer.clear();this.track.clear();this.carLayer.clear();this.decor.clear();
+   this.bg.fillGradientStyle(0x72d0ff,0x72d0ff,0xdff6ff,0xdff6ff,1);this.bg.fillRect(0,0,w,h);
+   // soft sun and distant hills
+   this.bg.fillStyle(0xfff2a8,.95);this.bg.fillCircle(w*.86,h*.2,Math.min(h*.12,45));
+   this.bg.fillStyle(0x8ed9b1,1);this.bg.fillEllipse(w*.15,h*.53,w*.5,h*.38);this.bg.fillStyle(0x70c99b,1);this.bg.fillEllipse(w*.78,h*.54,w*.65,h*.42);
+   this.clouds=[];for(let i=0;i<5;i++){const x=((i*257+45-this.cloudOffset*(i%2?1:.45))%(w+120)+w+120)%(w+120)-50,y=12+(i%3)*h*.12,s=.55+(i%3)*.2;this.drawCloud(this.bg,x,y,s);this.clouds.push({x,y,s})}
+   const top=h*.31,bottom=h*.91;this.track.fillStyle(0x343f52,1);this.track.fillRoundedRect(0,top,w,bottom-top,8);
+   this.track.fillStyle(0xf8fafc,1);this.track.fillRect(0,top,w,5);this.track.fillRect(0,bottom-5,w,5);
+   const lanes=Math.max(1,selectedCount);for(let i=1;i<lanes;i++){const y=top+(bottom-top)*i/lanes;this.track.lineStyle(2,0xffffff,.65);this.track.lineBetween(0,y,w,y);for(let x=0;x<w;x+=42){this.track.fillStyle(0xffffff,.5);this.track.fillRect(x,y-2,22,4)}}
+   // start/finish checkerboard
+   const fw=Math.max(12,w*.018),cell=Math.max(5,fw/4),rows=8,cols=4,fy=top+3,fh=bottom-top-6;
+   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){this.track.fillStyle((r+c)%2?0xffffff:0x172033,1);this.track.fillRect(w-fw+c*fw/cols,fy+r*fh/rows,fw/cols+1,fh/rows+1)}
+   this.cars=[];
+   players.forEach((p,i)=>{const laneH=(bottom-top)/lanes;const y=top+laneH*(i+.5);const start=w*.09;const finish=w-fw*.6;const progress=Math.min(1,p.score/Math.max(1,targetScore));const x=start+(finish-start)*progress;this.drawCar(this.carLayer,x,y,Math.max(22,Math.min(39,laneH*.58)),p.color.hex,p.color.letter);this.cars.push({x,y,p})});
+   this.decor.fillStyle(0xffffff,.7);this.decor.fillRoundedRect(w*.02,top-18,Math.min(140,w*.25),14,7);this.decor.fillStyle(0x23466d,1);this.decor.fillRoundedRect(w*.02,top-18,Math.min(140,w*.25)*(Math.min(...players.map(p=>p.score))/Math.max(1,targetScore)),14,7);
+  }
+  drawCloud(g,x,y,s){g.fillStyle(0xffffff,.9);g.fillEllipse(x,y,48*s,18*s);g.fillCircle(x-10*s,y-5*s,10*s);g.fillCircle(x+3*s,y-9*s,13*s);g.fillCircle(x+15*s,y-3*s,9*s)}
+  drawCar(g,x,y,size,color,letter){
+   const w=size*1.8,h=size*.68;g.fillStyle(0x172033,.22);g.fillEllipse(x+2,y+h*.7,w*1.1,h*.6);
+   g.fillStyle(0x172033,1);g.fillRoundedRect(x-w*.34,y+h*.18,w*.22,h*.48,3);g.fillRoundedRect(x+w*.17,y+h*.18,w*.22,h*.48,3);
+   g.fillStyle(color,1);g.fillRoundedRect(x-w/2,y-h*.15,w,h*.72,5);g.fillRoundedRect(x-w*.15,y-h*.48,w*.47,h*.43,5);
+   g.fillStyle(0xc8efff,1);g.fillRoundedRect(x-w*.08,y-h*.42,w*.31,h*.27,3);g.fillStyle(0xffffff,.9);g.fillRect(x-w*.42,y+h*.18,w*.13,3);g.fillRect(x+w*.29,y+h*.18,w*.13,3);
+   g.fillStyle(0x172033,1);g.fillCircle(x-w*.29,y+h*.43,h*.2);g.fillCircle(x+w*.29,y+h*.43,h*.2);g.fillStyle(0xbcc9d9,1);g.fillCircle(x-w*.29,y+h*.43,h*.09);g.fillCircle(x+w*.29,y+h*.43,h*.09);
+   g.fillStyle(color===0xfacc15?0x5a4200:0xffffff,1);g.fillRoundedRect(x-w*.09,y-h*.01,w*.18,h*.25,3);
+  }
+  moveClouds(){this.cloudOffset=(this.cloudOffset+0.65)%260;}
+  updateCars(ps,target){this.drawWorld()}
+  startAmbience(){this.stopAmbience();if(soundOn){this.ambience=this.time.addEvent({delay:1800,loop:true,callback:()=>{if(gameRunning&&soundOn){/* gentle race tick */}}})}}
+  stopAmbience(){if(this.ambience){this.ambience.remove();this.ambience=null}}
+ }
+ const cfg={type:Phaser.AUTO,parent:'raceCanvas',width:1280,height:220,backgroundColor:'#b9e8ff',transparent:false,antialias:true,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},render:{pixelArt:false,roundPixels:false},scene:[RaceScene]};
+ phaserGame=new Phaser.Game(cfg);phaserGame.events.once('ready',()=>{});raceScene=phaserGame.scene.getScene('race');return true;
+}
+</script>
+</body>
+</html>
