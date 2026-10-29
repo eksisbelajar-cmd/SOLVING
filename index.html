@@ -417,6 +417,19 @@ function startGame(){
 }
 function clearPlayerTimers(){players.forEach(p=>{if(p.questionTimer)clearTimeout(p.questionTimer);if(p.nextTimer)clearTimeout(p.nextTimer);p.questionTimer=null;p.nextTimer=null})}
 function backToMenu(){gameRunning=false;clearTimeout(questionTimer);clearPlayerTimers();$('game').classList.add('hidden');$('overlay').classList.add('hidden');$('lobby').classList.remove('hidden');if(raceScene)raceScene.stopAmbience()}
+window.addEventListener('resize',()=>{
+ if(gameRunning && phaserGame && raceScene){
+  const host=document.getElementById('raceCanvas');
+  setTimeout(()=>{
+   if(!host||!phaserGame||!raceScene)return;
+   const w=Math.max(1,Math.floor(host.clientWidth||1280));
+   const h=Math.max(1,Math.floor(host.clientHeight||140));
+   phaserGame.scale.resize(w,h);
+   if(raceScene.drawWorld)raceScene.drawWorld();
+   if(raceScene.updateCars)raceScene.updateCars(players,targetScore);
+  },100);
+ }
+});
 $('start').addEventListener('click',()=>{
  setStatus('startStatus','');
  try{
@@ -455,7 +468,27 @@ function initPhaser(){
  // Gunakan satu instance Phaser sepanjang sesi halaman. Menghancurkan/membuat
  // canvas berulang kali dapat meninggalkan canvas hitam setelah restart.
  if(phaserGame && raceScene){
-  if(raceScene.scene && raceScene.scene.isActive())raceScene.drawWorld();
+  // Ketika kembali ke menu, parent canvas disembunyikan (display:none).
+  // Phaser RESIZE bisa membaca ukuran 0 dan tidak selalu pulih saat menu ditutup.
+  // Paksa ukur ulang dari ukuran aktual container setiap permainan dimulai.
+  const host=document.getElementById('raceCanvas');
+  const restoreRaceCanvas=()=>{
+   if(!phaserGame||!raceScene||!host)return;
+   const w=Math.max(1,Math.floor(host.clientWidth||host.getBoundingClientRect().width||1280));
+   const h=Math.max(1,Math.floor(host.clientHeight||host.getBoundingClientRect().height||140));
+   try{
+    phaserGame.scale.resize(w,h);
+    if(raceScene.scene && !raceScene.scene.isActive())phaserGame.scene.start('race');
+    if(raceScene.bg && raceScene.drawWorld)raceScene.drawWorld();
+    if(raceScene.updateCars)raceScene.updateCars(players,targetScore);
+    if(phaserGame.renderer && phaserGame.renderer.snapshotArea) {
+     // No-op: renderer will repaint on its next frame.
+    }
+   }catch(err){console.warn('Pemulihan lintasan:',err)}
+  };
+  restoreRaceCanvas();
+  setTimeout(restoreRaceCanvas,80);
+  setTimeout(restoreRaceCanvas,260);
   return true;
  }
  class RaceScene extends Phaser.Scene{
@@ -468,7 +501,15 @@ function initPhaser(){
   drawWorld(){
    if(!this.bg||!this.cloudLayer||!this.track||!this.carLayer||!this.decor)return;
    const w=this.scale.width,h=this.scale.height;
-   if(!w||!h){this.time.delayedCall(120,()=>this.drawWorld());return}
+   if(!w||!h){
+    setTimeout(()=>{if(gameRunning&&this.sys&&this.sys.isActive()){
+     const host=document.getElementById('raceCanvas');
+     const nw=Math.max(1,Math.floor(host?.clientWidth||1280)),nh=Math.max(1,Math.floor(host?.clientHeight||140));
+     if(phaserGame)phaserGame.scale.resize(nw,nh);
+     this.drawWorld();
+    }},160);
+    return
+   }
    this.bg.clear();this.cloudLayer.clear();this.track.clear();this.carLayer.clear();this.decor.clear();
    this.bg.fillGradientStyle(0x72d0ff,0x72d0ff,0xdff6ff,0xdff6ff,1);this.bg.fillRect(0,0,w,h);
    // soft sun and distant hills
