@@ -160,12 +160,41 @@ html,body{overflow:hidden}
  .player-name{font-size:10px}
 }
 
+
+/* V5 FINAL */
+#raceCanvas{height:clamp(190px,32vh,330px);flex:0 0 clamp(190px,32vh,330px)}
+.top-actions{align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.top-actions button{white-space:nowrap}
+/* Lapisan hasil menutupi seluruh area pemain sesaat, dengan lencana besar di tengah. */
+.answer-result{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transform:scale(.97);border:0;border-radius:inherit;color:#fff;font-size:clamp(25px,3.4vw,48px);font-weight:1000;letter-spacing:.08em;text-shadow:0 3px 8px #0008;transition:opacity .16s ease,transform .2s cubic-bezier(.2,.9,.2,1);backdrop-filter:blur(2px)}
+.answer-result.show{opacity:1;transform:scale(1)}
+.answer-result.correct{background:rgba(22,163,74,.68);box-shadow:inset 0 0 0 5px rgba(255,255,255,.58)}
+.answer-result.wrong{background:rgba(220,38,38,.70);box-shadow:inset 0 0 0 5px rgba(255,255,255,.58)}
+.answer-result span{display:inline-flex;align-items:center;justify-content:center;min-width:clamp(150px,25%,260px);padding:16px 28px;border:3px solid #fff;border-radius:20px;background:linear-gradient(145deg,#ffffff35,#07142f28);box-shadow:0 12px 32px #07142f55;font-size:inherit;animation:resultPop .22s cubic-bezier(.2,.9,.2,1)}
+@keyframes resultPop{from{transform:scale(.72)}to{transform:scale(1)}}
+.winner-scores{display:grid;gap:6px;margin:14px 0 18px;text-align:left}
+.winner-score-row{padding:8px 11px;border-radius:10px;background:#eaf1fb;font-weight:850;display:flex;justify-content:space-between;gap:10px}
+.overlay-card{position:relative;overflow:hidden}
+.overlay-card:before{content:"✨ 🏁 ✨";display:block;font-size:22px;letter-spacing:12px;animation:trophyBounce 1.4s infinite}
+@media(min-width:701px){#players{grid-template-columns:repeat(var(--count,2),minmax(0,1fr));grid-template-rows:minmax(0,1fr)}}
+@media(max-width:700px){
+ #raceCanvas{height:clamp(118px,19vh,165px);flex-basis:clamp(118px,19vh,165px)}
+ .topbar{height:auto;min-height:48px;flex-basis:auto;padding:5px 7px;gap:5px}
+ .topbar .title{font-size:10px}.top-actions{gap:4px}
+ .top-actions button{font-size:9px;padding:6px 7px;min-height:30px}
+ #players[data-count="3"],#players[data-count="4"]{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}
+}
+@media(max-width:390px){.top-actions button{font-size:8px;padding:5px}.topbar .title{display:none}}
+:fullscreen #game{height:100dvh;width:100vw}
+:fullscreen #raceCanvas{height:clamp(220px,34vh,380px);flex-basis:clamp(220px,34vh,380px)}
+:fullscreen{background:#07142f}
+
 </style>
 </head>
 <body>
 <section id="lobby">
   <div class="lobby-card">
-    <header class="hero"><div class="brand">SOLVING · SMART ONLINE LEARNING</div><h1>MATH RACE BATTLE</h1><p>Berpikir cepat. Jawab tepat. Melaju menuju garis finis!</p></header>
+    <header class="hero"><div class="brand">SOLVING · SMART ONLINE LEARNING</div><h1>MATH RACE BATTLE</h1><p>Berpikir cepat. Jawab tepat. Melaju menuju garis finis!<br><small>Belajar, Berlatih, Berkembang</small></p></header>
     <div class="lobby-content">
       <section class="section">
         <h2>01 / PENGATURAN BALAPAN</h2>
@@ -176,7 +205,7 @@ html,body{overflow:hidden}
         </div><div id="deviceNote" class="notice"></div></div>
         <div class="field"><label>JENIS SOAL</label><select id="operation"><option value="mix">Campuran (+ − × ÷)</option><option value="add">Penjumlahan (+)</option><option value="sub">Pengurangan (−)</option><option value="mul">Perkalian (×)</option><option value="div">Pembagian (÷)</option></select></div>
         <div class="field"><label>KESULITAN</label><select id="level"><option value="easy">Mudah · hasil sampai 25</option><option value="medium" selected>Sedang · hasil sampai 60</option><option value="hard">Menantang · hasil sampai 120</option></select></div>
-        <div class="field"><label>JUMLAH POIN UNTUK MENANG</label><select id="target"><option value="5">5 poin · cepat</option><option value="8" selected>8 poin · standar</option><option value="12">12 poin · panjang</option></select></div>
+        <div class="field"><label>JUMLAH POIN UNTUK MENANG</label><select id="target"><option value="5">5 poin · cepat</option><option value="10" selected>10 poin · standar</option><option value="15">15 poin · menengah</option><option value="20">20 poin · panjang</option></select></div>
       </section>
       <section class="section">
         <h2>02 / PILIH SUMBER SOAL</h2>
@@ -205,11 +234,11 @@ html,body{overflow:hidden}
 </section>
 
 <main id="game" class="hidden">
-  <header class="topbar"><button id="back" class="top-actions">← Menu</button><div class="title">SOLVING · MATH RACE</div><div class="top-actions"><button id="soundToggle">🔊 Suara: ON</button><button id="restart">↻ Ulang</button></div></header>
-  <div id="raceCanvas"><div class="race-meta"><span class="pill" id="roundPill">RONDE 1</span><span class="pill" id="targetPill">TARGET 8 POIN</span></div></div>
+  <header class="topbar"><div class="title">SOLVING · MATH RACE</div><div class="top-actions"><button id="homeBtn" type="button">⌂ HOME</button><button id="fullscreenBtn" type="button">⛶ FULLSCREEN</button><button id="soundToggle">🔊 Suara: ON</button><button id="restart">↻ Ulang</button><button id="exitBtn" type="button">KELUAR ↗</button></div></header>
+  <div id="raceCanvas"><div class="race-meta"><span class="pill" id="roundPill">RONDE 1</span><span class="pill" id="targetPill">TARGET 10 POIN</span></div></div>
   <section id="players" style="--count:2"></section>
 </main>
-<div id="overlay" class="hidden"><div class="overlay-card"><div class="trophy">🏆</div><h2 id="winnerTitle">PEMENANG!</h2><p id="winnerDesc">Balapan selesai.</p><button class="primary" id="playAgain">BALAPAN LAGI</button><button class="secondary" id="overlayMenu" style="margin-top:12px;width:100%">KEMBALI KE MENU</button></div></div>
+<div id="overlay" class="hidden"><div class="overlay-card"><div class="trophy">🏆</div><h2 id="winnerTitle">PEMENANG!</h2><p id="winnerDesc">Balapan selesai.</p><div id="winnerScores" class="winner-scores"></div><button class="primary" id="playAgain">BERMAIN LAGI</button><button class="secondary" id="overlayMenu" style="margin-top:12px;width:100%">HOME</button></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -227,7 +256,7 @@ const COLORS=[
  {name:'BIRU',hex:0x3b82f6,css:'#3b82f6',soft:'#edf5ff',dark:'#164b9b',letter:'B'}
 ];
 let selectedCount=2,sourceMode='default',questionBank=[],firebaseBank=[],firebaseMeta='IA',customBank=[],customType='PG';
-let players=[],roundQuestion=null,roundNumber=1,targetScore=8,roundLocked=false,gameRunning=false, soundOn=true, audioCtx=null,phaserGame=null,raceScene=null,questionTimer=null;
+let players=[],roundQuestion=null,roundNumber=1,targetScore=8,roundLocked=false,gameRunning=false, soundOn=true, audioCtx=null,musicTimer=null,musicStep=0,phaserGame=null,raceScene=null,questionTimer=null;
 const $=id=>document.getElementById(id);
 const isPhone=()=>matchMedia('(max-width:700px)').matches || (navigator.maxTouchPoints>0 && Math.min(screen.width,screen.height)<600);
 function setStatus(id,msg,type=''){const el=$(id);el.textContent=msg;el.className='status '+type}
@@ -275,7 +304,7 @@ function initPlayers(){
  $('players').innerHTML=players.map(p=>`<article class="player-panel" id="panelP${p.id}" style="--pc:${p.color.css};--soft:${p.color.soft}">
    <div class="player-head"><span class="player-name">🚗 PEMAIN ${p.id+1} · ${p.color.name}</span><span class="player-score" id="scoreP${p.id}">⭐ 0 / ${targetScore}</span></div>
    <div class="player-main"><div class="question" id="questionP${p.id}">Siap balapan?</div><div class="subquestion" id="subP${p.id}">Soal acak khusus pemain ini</div><div class="answer-display" id="displayP${p.id}">Pilih jawaban</div></div>
-   <div class="answer-area" id="answersP${p.id}"></div><div class="player-footer" id="feedbackP${p.id}">MENUNGGU JAWABAN</div>
+   <div class="answer-area" id="answersP${p.id}"></div><div class="player-footer" id="feedbackP${p.id}">MENUNGGU JAWABAN</div><div class="answer-result" id="resultP${p.id}" aria-live="polite"><span></span></div>
  </article>`).join('');
 }
 function setupAnswerUI(p){
@@ -336,6 +365,12 @@ function disablePlayerAnswers(p){
  if(area)area.querySelectorAll('button,input').forEach(el=>el.disabled=true);
  const input=$('textInputP'+p.id);if(input)input.disabled=true;
 }
+function showPlayerResult(p,label,isCorrect){
+ const el=$('resultP'+p.id);if(!el)return;
+ if(p.resultTimer)clearTimeout(p.resultTimer);
+ const badge=el.querySelector('span');if(badge)badge.textContent=label;el.className='answer-result '+(isCorrect?'correct':'wrong')+' show';
+ p.resultTimer=setTimeout(()=>el.classList.remove('show'),isCorrect?650:1850);
+}
 function submitPlayer(id,value){
  const p=players[id];if(!gameRunning||!p||p.answered||p.finished)return;
  p.answer=String(value??'').trim();
@@ -343,6 +378,7 @@ function submitPlayer(id,value){
  p.answered=true;
  if(p.questionTimer){clearTimeout(p.questionTimer);p.questionTimer=null}
  p.correct=correctAnswers(p.question).includes(p.answer.toLocaleLowerCase('id-ID'));
+ showPlayerResult(p,p.correct?'✓ BENAR':'✕ SALAH',p.correct);
  sound(p.correct?'correct':'wrong');
  const display=$('displayP'+id),fb=$('feedbackP'+id);
  if(display)display.textContent=p.answer||'—';
@@ -382,6 +418,7 @@ function resolveRound(timedOut){
  });
 }
 function showWinner(winners){
+ stopMusic();
  $('overlay').classList.remove('hidden');
  if(winners.length>1){$('winnerTitle').textContent='HASIL IMBANG!';$('winnerDesc').textContent='Lebih dari satu pemain mencapai target pada ronde yang sama.'}
  else{$('winnerTitle').textContent=`PEMAIN ${winners[0].id+1} MENANG!`;$('winnerDesc').textContent=`Mobil ${winners[0].color.name.toLowerCase()} mencapai ${targetScore} poin lebih dahulu.`}
@@ -409,14 +446,39 @@ function sound(type){
   else if(type==='round'){play(440,now,.10,'sine',.055);play(660,now+.09,.12,'sine',.06)}
  }catch(e){console.warn('Efek suara tidak tersedia',e)}
 }
+// Musik latar orisinal bergaya arcade ringan, dibuat langsung dengan Web Audio API.
+// Volume sengaja rendah; tombol Suara: OFF menghentikan musik dan seluruh efek.
+function startMusic(){
+ if(!soundOn||!gameRunning||musicTimer)return;
+ try{
+  audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  const melody=[523.25,659.25,783.99,659.25,587.33,698.46,783.99,880,783.99,698.46,659.25,587.33,523.25,587.33,659.25,783.99];
+  const bass=[130.81,130.81,164.81,164.81,174.61,174.61,146.83,146.83];
+  musicStep=0;
+  musicTimer=setInterval(()=>{
+   if(!soundOn||!gameRunning||!audioCtx)return;
+   const now=audioCtx.currentTime,idx=musicStep%melody.length;
+   const note=(freq,at,dur,wave,vol)=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=wave;o.frequency.setValueAtTime(freq,at);
+    g.gain.setValueAtTime(.0001,at);g.gain.linearRampToValueAtTime(vol,at+.035);g.gain.exponentialRampToValueAtTime(.0001,at+dur);
+    o.connect(g);g.connect(audioCtx.destination);o.start(at);o.stop(at+dur+.025);
+   };
+   note(melody[idx],now,.29,'triangle',.027);
+   if(musicStep%2===0)note(bass[(musicStep/2)%bass.length],now,.42,'sine',.018);
+   musicStep++;
+  },360);
+ }catch(e){console.warn('Musik latar tidak tersedia',e)}
+}
+function stopMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null}}
 function startGame(){
  if(isPhone()&&selectedCount>2)selectCount(2);
  targetScore=+$('target').value;roundNumber=1;gameRunning=true;$('lobby').classList.add('hidden');$('game').classList.remove('hidden');$('overlay').classList.add('hidden');
  initPlayers();if(!initPhaser()){setStatus('startStatus','Phaser gagal dimuat. Periksa koneksi internet lalu muat ulang.','err');backToMenu();return}
- startRound();sound('start');if(raceScene)raceScene.startAmbience();
+ startRound();sound('start');startMusic();if(raceScene)raceScene.startAmbience();
 }
-function clearPlayerTimers(){players.forEach(p=>{if(p.questionTimer)clearTimeout(p.questionTimer);if(p.nextTimer)clearTimeout(p.nextTimer);p.questionTimer=null;p.nextTimer=null})}
-function backToMenu(){gameRunning=false;clearTimeout(questionTimer);clearPlayerTimers();$('game').classList.add('hidden');$('overlay').classList.add('hidden');$('lobby').classList.remove('hidden');if(raceScene)raceScene.stopAmbience()}
+function clearPlayerTimers(){players.forEach(p=>{if(p.questionTimer)clearTimeout(p.questionTimer);if(p.nextTimer)clearTimeout(p.nextTimer);p.questionTimer=null;p.nextTimer=null;if(p.resultTimer)clearTimeout(p.resultTimer);p.resultTimer=null})}
+function backToMenu(){gameRunning=false;stopMusic();clearTimeout(questionTimer);clearPlayerTimers();$('game').classList.add('hidden');$('overlay').classList.add('hidden');$('lobby').classList.remove('hidden');if(raceScene)raceScene.stopAmbience()}
 window.addEventListener('resize',()=>{
  if(gameRunning && phaserGame && raceScene){
   const host=document.getElementById('raceCanvas');
@@ -438,8 +500,26 @@ $('start').addEventListener('click',()=>{
   startGame();
  }catch(e){setStatus('startStatus',e.message,'err')}
 });
-$('back').onclick=backToMenu;$('restart').onclick=()=>{gameRunning=false;clearTimeout(questionTimer);clearPlayerTimers();startGame()};$('playAgain').onclick=()=>{ $('overlay').classList.add('hidden');startGame()};$('overlayMenu').onclick=backToMenu;
-$('soundToggle').onclick=()=>{soundOn=!soundOn;$('soundToggle').textContent=soundOn?'🔊 Suara: ON':'🔇 Suara: OFF';if(soundOn)sound('correct')};
+$('homeBtn').onclick=()=>window.location.reload();
+$('overlayMenu').onclick=()=>window.location.reload();
+$('restart').onclick=()=>{gameRunning=false;clearTimeout(questionTimer);clearPlayerTimers();if(raceScene)raceScene.stopAmbience();startGame()};
+$('playAgain').onclick=()=>{$('overlay').classList.add('hidden');startGame()};
+$('fullscreenBtn').onclick=async()=>{
+ try{
+  if(!document.fullscreenElement){await document.documentElement.requestFullscreen();$('fullscreenBtn').textContent='⛶ KELUAR FULLSCREEN'}
+  else{await document.exitFullscreen();$('fullscreenBtn').textContent='⛶ FULLSCREEN'}
+  requestAnimationFrame(()=>{if(phaserGame&&raceScene){const host=$('raceCanvas');phaserGame.scale.resize(Math.max(1,host.clientWidth),Math.max(1,host.clientHeight));raceScene.drawWorld()}})
+ }catch(e){console.warn('Fullscreen tidak tersedia:',e);alert('Mode fullscreen tidak dapat diaktifkan. Coba gunakan Chrome dan izinkan tindakan fullscreen.')}
+};
+document.addEventListener('fullscreenchange',()=>{
+ $('fullscreenBtn').textContent=document.fullscreenElement?'⛶ KELUAR FULLSCREEN':'⛶ FULLSCREEN';
+ requestAnimationFrame(()=>{if(phaserGame&&raceScene&&!$('game').classList.contains('hidden')){const host=$('raceCanvas');phaserGame.scale.resize(Math.max(1,host.clientWidth),Math.max(1,host.clientHeight));raceScene.drawWorld()}})
+});
+$('exitBtn').onclick=async()=>{
+ try{if(document.fullscreenElement)await document.exitFullscreen()}catch(e){console.warn(e)}
+ window.location.assign('https://game.educareindo.com');
+};
+$('soundToggle').onclick=()=>{soundOn=!soundOn;$('soundToggle').textContent=soundOn?'🔊 Suara: ON':'🔇 Suara: OFF';if(!soundOn){stopMusic();if(audioCtx&&audioCtx.state==='running')audioCtx.suspend()}else{if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();if(gameRunning){startMusic();sound('correct')}}};
 $('checkCode').onclick=async()=>{
  const code=$('firebaseCode').value.trim().toUpperCase();setStatus('codeStatus','Memeriksa database…');
  if(!code)return setStatus('codeStatus','Masukkan kode soal terlebih dahulu.','err');
@@ -540,7 +620,7 @@ function initPhaser(){
   startAmbience(){this.stopAmbience();if(soundOn){this.ambience=this.time.addEvent({delay:6500,loop:true,callback:()=>{if(gameRunning&&soundOn)sound('round')}})}}
   stopAmbience(){if(this.ambience){this.ambience.remove();this.ambience=null}}
  }
- const cfg={type:Phaser.AUTO,parent:'raceCanvas',width:1280,height:220,backgroundColor:'#b9e8ff',transparent:false,antialias:true,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},render:{pixelArt:false,roundPixels:false},scene:[RaceScene]};
+ const cfg={type:Phaser.AUTO,parent:'raceCanvas',width:1280,height:300,backgroundColor:'#b9e8ff',transparent:false,antialias:true,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},render:{pixelArt:false,roundPixels:false},scene:[RaceScene]};
  phaserGame=new Phaser.Game(cfg);phaserGame.events.once('ready',()=>{});raceScene=phaserGame.scene.getScene('race');return true;
 }
 </script>
