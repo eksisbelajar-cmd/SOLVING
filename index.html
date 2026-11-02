@@ -493,25 +493,31 @@ window.addEventListener('resize',()=>{
   },100);
  }
 });
-// Browser hanya mengizinkan audio dan fullscreen setelah interaksi pengguna pertama.
-// Satu ketukan/klik pertama mengaktifkan keduanya; status fullscreen berlanjut dari lobby,
-// pengaturan, sampai permainan dimulai selama pengguna tidak keluar fullscreen manual.
+// Audio diaktifkan pada interaksi pertama agar musik dapat mulai sesuai kebijakan browser.
+// Fullscreen sengaja diminta khusus saat tombol MULAI BALAPAN ditekan,
+// sehingga permintaan berada langsung di dalam aktivasi klik tombol tersebut.
 let firstInteractionHandled=false;
 async function activateExperience(){
  if(firstInteractionHandled)return;
  firstInteractionHandled=true;
- // Panggil Fullscreen API sebelum await agar masih berada dalam aktivasi klik pengguna.
- let fullscreenPromise=null;
- if(!document.fullscreenElement&&document.documentElement.requestFullscreen){
-  try{fullscreenPromise=document.documentElement.requestFullscreen()}catch(e){console.warn('Fullscreen memerlukan interaksi/izin browser:',e)}
- }
  if(soundOn){
   try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')await audioCtx.resume();startMusic();sound('button')}catch(e){console.warn('Audio belum dapat diaktifkan:',e)}
  }
- if(fullscreenPromise){try{await fullscreenPromise}catch(e){console.warn('Fullscreen tidak diizinkan browser:',e)}}
 }
 document.addEventListener('pointerdown',activateExperience,{capture:true,once:true});
 document.addEventListener('keydown',activateExperience,{capture:true,once:true});
+function requestFullscreenForRace(){
+ if(document.fullscreenElement)return;
+ const root=document.documentElement;
+ if(root.requestFullscreen){
+  try{
+   const request=root.requestFullscreen();
+   if(request&&typeof request.catch==='function')request.catch(e=>console.warn('Fullscreen ditolak browser/PID. Pastikan halaman diizinkan menggunakan fullscreen:',e));
+  }catch(e){console.warn('Fullscreen tidak tersedia:',e)}
+ }else if(root.webkitRequestFullscreen){
+  try{root.webkitRequestFullscreen()}catch(e){console.warn('Fullscreen tidak tersedia:',e)}
+ }
+}
 // Bunyi klik singkat untuk tombol pengaturan dan tombol antarmuka lainnya.
 document.addEventListener('click',e=>{if(e.target.closest('button')&&soundOn)sound('button')},true);
 
@@ -520,6 +526,8 @@ $('start').addEventListener('click',()=>{
  try{
   if(sourceMode==='firebase'&&!firebaseBank.length)throw new Error('Periksa kode soal terlebih dahulu.');
   if(sourceMode==='excel'&&!customBank.length)throw new Error('Silakan baca file Excel terlebih dahulu.');
+  // Harus dipanggil langsung pada event klik, sebelum proses memulai game.
+  requestFullscreenForRace();
   startGame();
  }catch(e){setStatus('startStatus',e.message,'err')}
 });
