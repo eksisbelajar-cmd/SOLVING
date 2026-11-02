@@ -439,17 +439,18 @@ function sound(type){
    gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
    osc.connect(gain);gain.connect(audioCtx.destination);osc.start(at);osc.stop(at+duration+.02);
   };
-  if(type==='correct'){play(660,now,.13,'triangle',.09);play(990,now+.10,.18,'triangle',.09)}
-  else if(type==='wrong'){play(240,now,.22,'sawtooth',.055,145)}
-  else if(type==='win'){[523,659,784,1047,1318].forEach((f,i)=>play(f,now+i*.12,.32,'triangle',.085))}
-  else if(type==='start'){play(330,now,.12,'triangle',.07);play(494,now+.12,.12,'triangle',.07);play(659,now+.24,.24,'triangle',.09)}
-  else if(type==='round'){play(440,now,.10,'sine',.055);play(660,now+.09,.12,'sine',.06)}
+  if(type==='correct'){play(660,now,.13,'triangle',.16);play(990,now+.10,.18,'triangle',.16)}
+  else if(type==='wrong'){play(240,now,.22,'sawtooth',.12,145)}
+  else if(type==='win'){[523,659,784,1047,1318].forEach((f,i)=>play(f,now+i*.12,.32,'triangle',.15))}
+  else if(type==='start'){play(330,now,.12,'triangle',.13);play(494,now+.12,.12,'triangle',.13);play(659,now+.24,.24,'triangle',.16)}
+  else if(type==='round'){play(440,now,.10,'sine',.11);play(660,now+.09,.12,'sine',.12)}
+  else if(type==='button'){play(740,now,.075,'triangle',.12);play(988,now+.035,.09,'triangle',.10)}
  }catch(e){console.warn('Efek suara tidak tersedia',e)}
 }
 // Musik latar orisinal bergaya arcade ringan, dibuat langsung dengan Web Audio API.
-// Volume sengaja rendah; tombol Suara: OFF menghentikan musik dan seluruh efek.
+// Musik arcade orisinal dengan volume normal; volume akhir tetap dapat diatur dari perangkat.
 function startMusic(){
- if(!soundOn||!gameRunning||musicTimer)return;
+ if(!soundOn||musicTimer)return;
  try{
   audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
   if(audioCtx.state==='suspended')audioCtx.resume();
@@ -457,15 +458,15 @@ function startMusic(){
   const bass=[130.81,130.81,164.81,164.81,174.61,174.61,146.83,146.83];
   musicStep=0;
   musicTimer=setInterval(()=>{
-   if(!soundOn||!gameRunning||!audioCtx)return;
+   if(!soundOn||!audioCtx)return;
    const now=audioCtx.currentTime,idx=musicStep%melody.length;
    const note=(freq,at,dur,wave,vol)=>{
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=wave;o.frequency.setValueAtTime(freq,at);
     g.gain.setValueAtTime(.0001,at);g.gain.linearRampToValueAtTime(vol,at+.035);g.gain.exponentialRampToValueAtTime(.0001,at+dur);
     o.connect(g);g.connect(audioCtx.destination);o.start(at);o.stop(at+dur+.025);
    };
-   note(melody[idx],now,.29,'triangle',.027);
-   if(musicStep%2===0)note(bass[(musicStep/2)%bass.length],now,.42,'sine',.018);
+   note(melody[idx],now,.29,'triangle',.105);
+   if(musicStep%2===0)note(bass[(musicStep/2)%bass.length],now,.42,'sine',.075);
    musicStep++;
   },360);
  }catch(e){console.warn('Musik latar tidak tersedia',e)}
@@ -492,6 +493,28 @@ window.addEventListener('resize',()=>{
   },100);
  }
 });
+// Browser hanya mengizinkan audio dan fullscreen setelah interaksi pengguna pertama.
+// Satu ketukan/klik pertama mengaktifkan keduanya; status fullscreen berlanjut dari lobby,
+// pengaturan, sampai permainan dimulai selama pengguna tidak keluar fullscreen manual.
+let firstInteractionHandled=false;
+async function activateExperience(){
+ if(firstInteractionHandled)return;
+ firstInteractionHandled=true;
+ // Panggil Fullscreen API sebelum await agar masih berada dalam aktivasi klik pengguna.
+ let fullscreenPromise=null;
+ if(!document.fullscreenElement&&document.documentElement.requestFullscreen){
+  try{fullscreenPromise=document.documentElement.requestFullscreen()}catch(e){console.warn('Fullscreen memerlukan interaksi/izin browser:',e)}
+ }
+ if(soundOn){
+  try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')await audioCtx.resume();startMusic();sound('button')}catch(e){console.warn('Audio belum dapat diaktifkan:',e)}
+ }
+ if(fullscreenPromise){try{await fullscreenPromise}catch(e){console.warn('Fullscreen tidak diizinkan browser:',e)}}
+}
+document.addEventListener('pointerdown',activateExperience,{capture:true,once:true});
+document.addEventListener('keydown',activateExperience,{capture:true,once:true});
+// Bunyi klik singkat untuk tombol pengaturan dan tombol antarmuka lainnya.
+document.addEventListener('click',e=>{if(e.target.closest('button')&&soundOn)sound('button')},true);
+
 $('start').addEventListener('click',()=>{
  setStatus('startStatus','');
  try{
@@ -519,7 +542,7 @@ $('exitBtn').onclick=async()=>{
  try{if(document.fullscreenElement)await document.exitFullscreen()}catch(e){console.warn(e)}
  window.location.assign('https://game.educareindo.com');
 };
-$('soundToggle').onclick=()=>{soundOn=!soundOn;$('soundToggle').textContent=soundOn?'🔊 Suara: ON':'🔇 Suara: OFF';if(!soundOn){stopMusic();if(audioCtx&&audioCtx.state==='running')audioCtx.suspend()}else{if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();if(gameRunning){startMusic();sound('correct')}}};
+$('soundToggle').onclick=()=>{soundOn=!soundOn;$('soundToggle').textContent=soundOn?'🔊 Suara: ON':'🔇 Suara: OFF';if(!soundOn){stopMusic();if(audioCtx&&audioCtx.state==='running')audioCtx.suspend()}else{if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();startMusic();sound('correct')}};
 $('checkCode').onclick=async()=>{
  const code=$('firebaseCode').value.trim().toUpperCase();setStatus('codeStatus','Memeriksa database…');
  if(!code)return setStatus('codeStatus','Masukkan kode soal terlebih dahulu.','err');
