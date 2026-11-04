@@ -143,7 +143,7 @@ function spawnOwnerFish(p,indices=null,positions=null){
   fish.style.setProperty('--swim',(15+Math.random()*13)+'s');
   fish.style.setProperty('--turn-duration',(10+Math.random()*13)+'s');
   fish.style.setProperty('--turn-delay',(-Math.random()*18)+'s');
-  const palette=item.role==='correct'?['#ff9d58','#ffd15c','#62d6a0','#65c4ed'][p.id]:['#b879dc','#df7ca4','#e28b68','#8a9fba'][p.id];
+  const palette=['#ff9d58','#ffd15c','#62d6a0','#65c4ed','#b879dc','#df7ca4','#e28b68','#8a9fba'][randInt(0,7)];
   fish.innerHTML=`<span class="fish-art">${fishSVG(palette,p.id+(item.index%4))}</span><span class="fish-label"></span>`;fish.querySelector('.fish-label').textContent=item.value;
   $('fishLayer').appendChild(fish);p.fish.push(fish);
  });
